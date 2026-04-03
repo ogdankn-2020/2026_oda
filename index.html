@@ -183,7 +183,9 @@ table{border-collapse:collapse;width:100%;}
 <script>
 const SHEET_ID='1HKL3667ixm6FcDN8cRba6PvKWFfNhjFjH3Y5vKDIpK4';
 const GID='1041232021';
-const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const DIRECT_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const CSV_URL   = `https://corsproxy.io/?url=${encodeURIComponent(DIRECT_URL)}`;
+const CSV_URL_FB = `https://api.allorigins.win/raw?url=${encodeURIComponent(DIRECT_URL)}`;
 const PAGE_SIZE=20;
 const CHART_COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
 const BADGE_PALETTE=[
@@ -397,10 +399,17 @@ function exportCSV(){
 }
 async function init(){
   try{
-    const resp=await fetch(CSV_URL,{cache:'no-store'});
-    if(!resp.ok)throw new Error('HTTP '+resp.status);
-    const text=await resp.text();
-    if(text.trim().startsWith('<'))throw new Error('Not CSV');
+let text='';
+for(const url of [CSV_URL,CSV_URL_FB]){
+  try{
+    const r=await fetch(url,{cache:'no-store'});
+    if(!r.ok)continue;
+    const t=await r.text();
+    if(t.trim().startsWith('<'))continue;
+    text=t;break;
+  }catch(e){continue;}
+}
+if(!text)throw new Error('All proxies failed');
     const parsed=parseCsv(text);
     if(!parsed.headers.length||!parsed.rows.length)throw new Error('Empty');
     headers=parsed.headers;allRows=parsed.rows;
