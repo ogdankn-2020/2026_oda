@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="uk" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Авто-Дашборд</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<style>
+:root {
+  --font-body:'Inter',sans-serif;
+  --text-xs:clamp(0.75rem,0.7rem + 0.25vw,0.875rem);
+  --text-sm:clamp(0.875rem,0.8rem + 0.35vw,1rem);
+  --text-base:clamp(1rem,0.95rem + 0.25vw,1.125rem);
+  --text-lg:clamp(1.125rem,1rem + 0.75vw,1.5rem);
+  --text-xl:clamp(1.5rem,1.2rem + 1.25vw,2.25rem);
+  --space-1:0.25rem;--space-2:0.5rem;--space-3:0.75rem;
+  --space-4:1rem;--space-5:1.25rem;--space-6:1.5rem;
+  --space-8:2rem;--space-10:2.5rem;--space-12:3rem;
+  --radius-sm:0.375rem;--radius-md:0.5rem;
+  --radius-lg:0.75rem;--radius-xl:1rem;--radius-full:9999px;
+  --transition:180ms cubic-bezier(0.16,1,0.3,1);
+}
+[data-theme="dark"] {
+  --color-bg:#0f172a;--color-surface:#1e293b;
+  --color-surface-2:#243447;--color-surface-offset:#2d3f55;
+  --color-border:rgba(148,163,184,0.12);
+  --color-text:#e2e8f0;--color-text-muted:#94a3b8;--color-text-faint:#64748b;
+  --color-primary:#3b82f6;--color-primary-hover:#2563eb;
+  --shadow-sm:0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md:0 4px 16px rgba(0,0,0,0.4);
+  --shadow-lg:0 12px 40px rgba(0,0,0,0.5);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+html{-webkit-font-smoothing:antialiased;scroll-behavior:smooth;}
+body{min-height:100dvh;font-family:var(--font-body);font-size:var(--text-base);color:var(--color-text);background:var(--color-bg);line-height:1.6;}
+img,svg{display:block;max-width:100%;}
+button{cursor:pointer;background:none;border:none;font:inherit;color:inherit;}
+table{border-collapse:collapse;width:100%;}
+.app-shell{display:flex;flex-direction:column;min-height:100dvh;}
+.header{background:var(--color-surface);border-bottom:1px solid var(--color-border);position:sticky;top:0;z-index:50;padding:var(--space-4) var(--space-6);}
+.header-inner{max-width:1400px;margin:0 auto;display:flex;align-items:center;gap:var(--space-4);}
+.header-logo{display:flex;align-items:center;gap:var(--space-3);}
+.header-logo svg{color:var(--color-primary);}
+.header-title{font-size:var(--text-lg);font-weight:700;color:var(--color-text);}
+.header-subtitle{font-size:var(--text-xs);color:var(--color-text-muted);margin-top:2px;}
+.main{flex:1;max-width:1400px;margin:0 auto;width:100%;padding:var(--space-6) var(--space-6) var(--space-12);}
+.state-wrapper{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:var(--space-12) var(--space-8);text-align:center;min-height:300px;gap:var(--space-4);}
+.spinner{width:40px;height:40px;border:3px solid var(--color-border);border-top-color:var(--color-primary);border-radius:50%;animation:spin 0.8s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.state-title{font-size:var(--text-lg);font-weight:600;}
+.state-body{font-size:var(--text-sm);color:var(--color-text-muted);max-width:48ch;}
+.kpi-section{margin-bottom:var(--space-8);}
+.kpi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(220px,100%),1fr));gap:var(--space-4);}
+.kpi-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-5) var(--space-6);display:flex;flex-direction:column;gap:var(--space-2);opacity:0;animation:fadeSlideIn 0.4s ease forwards;transition:box-shadow var(--transition),transform var(--transition);}
+.kpi-card:hover{box-shadow:var(--shadow-md);transform:translateY(-2px);}
+@keyframes fadeSlideIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.kpi-emoji{font-size:1.6rem;line-height:1;}
+.kpi-label{font-size:var(--text-xs);color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.07em;font-weight:600;}
+.kpi-value{font-size:var(--text-xl);font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1;}
+.kpi-sub{font-size:var(--text-xs);color:var(--color-text-faint);}
+.charts-section{margin-bottom:var(--space-8);}
+.section-title{font-size:var(--text-lg);font-weight:700;margin-bottom:var(--space-4);}
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(380px,100%),1fr));gap:var(--space-4);}
+.chart-card{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);padding:var(--space-5) var(--space-6);}
+.chart-card-title{font-size:var(--text-xs);font-weight:700;color:var(--color-text-muted);text-transform:uppercase;letter-spacing:0.07em;margin-bottom:var(--space-4);}
+.chart-wrap{position:relative;height:260px;}
+.table-section{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-xl);overflow:hidden;}
+.table-toolbar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:var(--space-3);padding:var(--space-4) var(--space-5);border-bottom:1px solid var(--color-border);}
+.toolbar-left{display:flex;align-items:center;gap:var(--space-3);flex:1;min-width:0;flex-wrap:wrap;}
+.table-title{font-size:var(--text-sm);font-weight:700;white-space:nowrap;}
+.search-wrap{position:relative;flex:1;min-width:180px;max-width:360px;}
+.search-icon{position:absolute;left:var(--space-3);top:50%;transform:translateY(-50%);color:var(--color-text-muted);pointer-events:none;}
+.search-input{width:100%;background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-2) var(--space-3) var(--space-2) calc(var(--space-3)*2 + 14px);font-size:var(--text-sm);color:var(--color-text);outline:none;transition:border-color var(--transition),box-shadow var(--transition);}
+.search-input::placeholder{color:var(--color-text-faint);}
+.search-input:focus{border-color:var(--color-primary);box-shadow:0 0 0 3px rgba(59,130,246,0.15);}
+.btn-csv{display:flex;align-items:center;gap:var(--space-2);background:var(--color-primary);color:#fff;border-radius:var(--radius-md);padding:var(--space-2) var(--space-4);font-size:var(--text-sm);font-weight:600;transition:background var(--transition),transform var(--transition);white-space:nowrap;}
+.btn-csv:hover{background:var(--color-primary-hover);transform:translateY(-1px);}
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+.data-table{font-size:var(--text-sm);}
+.data-table thead th{background:var(--color-surface-offset);padding:var(--space-3) var(--space-4);text-align:left;font-size:var(--text-xs);font-weight:700;text-transform:uppercase;letter-spacing:0.07em;color:var(--color-text-muted);white-space:nowrap;cursor:pointer;user-select:none;transition:background var(--transition),color var(--transition);border-bottom:1px solid var(--color-border);}
+.data-table thead th:hover{background:var(--color-surface-2);color:var(--color-text);}
+.data-table thead th.sorted{color:var(--color-primary);}
+.sort-arrow{margin-left:4px;opacity:0.4;font-size:0.7em;}
+.sorted .sort-arrow{opacity:1;}
+.data-table tbody tr{border-top:1px solid var(--color-border);transition:background var(--transition);}
+.data-table tbody tr:hover{background:rgba(59,130,246,0.04);}
+.data-table tbody td{padding:var(--space-3) var(--space-4);vertical-align:middle;}
+.num-cell{text-align:right;font-variant-numeric:tabular-nums;font-size:var(--text-xs);}
+.badge{display:inline-flex;align-items:center;padding:3px 10px;border-radius:var(--radius-full);font-size:var(--text-xs);font-weight:600;white-space:nowrap;}
+.progress-wrap{display:flex;align-items:center;gap:var(--space-2);}
+.progress-bar-bg{flex:1;height:6px;background:rgba(148,163,184,0.12);border-radius:var(--radius-full);overflow:hidden;min-width:50px;}
+.progress-bar-fill{height:100%;border-radius:var(--radius-full);background:linear-gradient(90deg,#3b82f6,#06b6d4);transition:width 0.5s ease;}
+.progress-val{font-size:var(--text-xs);color:var(--color-text-muted);font-variant-numeric:tabular-nums;min-width:36px;text-align:right;}
+.pagination{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:var(--space-3);padding:var(--space-4) var(--space-5);border-top:1px solid var(--color-border);}
+.pagination-info{font-size:var(--text-xs);color:var(--color-text-muted);}
+.pagination-btns{display:flex;align-items:center;gap:var(--space-1);}
+.page-btn{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--space-1) var(--space-3);font-size:var(--text-xs);color:var(--color-text-muted);transition:all var(--transition);}
+.page-btn:hover:not(:disabled):not(.active){background:var(--color-surface-offset);color:var(--color-text);}
+.page-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.page-btn.active{background:var(--color-primary);color:#fff;border-color:var(--color-primary);}
+.no-data{text-align:center;padding:var(--space-10) var(--space-8);color:var(--color-text-muted);font-size:var(--text-sm);}
+@media(max-width:640px){
+  .main{padding:var(--space-4) var(--space-3) var(--space-10);}
+  .header{padding:var(--space-3) var(--space-4);}
+  .kpi-grid{grid-template-columns:repeat(2,1fr);}
+  .charts-grid{grid-template-columns:1fr;}
+  .table-toolbar{flex-direction:column;align-items:stretch;}
+  .search-wrap{max-width:100%;}
+  .btn-csv{justify-content:center;}
+}
+@media(max-width:360px){.kpi-grid{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="header">
+    <div class="header-inner">
+      <div class="header-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-label="Дашборд">
+          <rect width="28" height="28" rx="7" fill="currentColor" opacity="0.15"/>
+          <rect x="5" y="15" width="5" height="8" rx="1.5" fill="currentColor"/>
+          <rect x="11.5" y="9" width="5" height="14" rx="1.5" fill="currentColor"/>
+          <rect x="18" y="5" width="5" height="18" rx="1.5" fill="currentColor" opacity="0.65"/>
+        </svg>
+        <div>
+          <div class="header-title" id="sheetTitle">Авто-Дашборд</div>
+          <div class="header-subtitle" id="updateTime"></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <div class="state-wrapper" id="loadingState">
+      <div class="spinner"></div>
+      <div class="state-title">⏳ Завантаження даних...</div>
+      <div class="state-body" style="color:var(--color-text-faint);font-size:var(--text-xs);">Підключення до Google Sheets</div>
+    </div>
+    <div class="state-wrapper" id="errorState" style="display:none;">
+      <div style="font-size:2.5rem">⚠️</div>
+      <div class="state-title">Не вдалося завантажити дані</div>
+      <div class="state-body">Перевірте посилання та доступ до таблиці. Аркуш Google Sheets має бути відкритий для загального доступу (Поділитися → «Переглядати може кожен»).</div>
+    </div>
+    <div id="dashContent" style="display:none;">
+      <section class="kpi-section"><div class="kpi-grid" id="kpiGrid"></div></section>
+      <section class="charts-section">
+        <h2 class="section-title">📊 Аналітика</h2>
+        <div class="charts-grid" id="chartsGrid"></div>
+      </section>
+      <section class="table-section">
+        <div class="table-toolbar">
+          <div class="toolbar-left">
+            <span class="table-title">📋 Таблиця даних</span>
+            <div class="search-wrap">
+              <svg class="search-icon" width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="6.5" cy="6.5" r="4.5"/><path d="m11 11 3 3"/>
+              </svg>
+              <input type="text" class="search-input" id="searchInput" placeholder="🔍 Пошук за таблицею..." aria-label="Пошук">
+            </div>
+          </div>
+          <button class="btn-csv" id="csvBtn">
+            <svg width="14" height="14" viewBox="0 0 15 15" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M7.5 10V2M4 7l3.5 3.5L11 7"/><path d="M2 13h11"/>
+            </svg>
+            Завантажити CSV
+          </button>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead id="tableHead"></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+        <div class="pagination" id="pagination"></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<script>
+const SHEET_ID='1HKL3667ixm6FcDN8cRba6PvKWFfNhjFjH3Y5vKDIpK4';
+const GID='1041232021';
+const CSV_URL=`https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+const PAGE_SIZE=20;
+const CHART_COLORS=['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+const BADGE_PALETTE=[
+  {bg:'rgba(59,130,246,0.15)',fg:'#93c5fd'},{bg:'rgba(16,185,129,0.15)',fg:'#6ee7b7'},
+  {bg:'rgba(245,158,11,0.15)',fg:'#fcd34d'},{bg:'rgba(239,68,68,0.15)',fg:'#fca5a5'},
+  {bg:'rgba(139,92,246,0.15)',fg:'#c4b5fd'},{bg:'rgba(6,182,212,0.15)',fg:'#67e8f9'},
+  {bg:'rgba(249,115,22,0.15)',fg:'#fdba74'},{bg:'rgba(236,72,153,0.15)',fg:'#f9a8d4'},
+];
+let allRows=[],headers=[],colTypes=[],filteredRows=[],currentPage=1,sortCol=-1,sortDir=1,chartInst=[];
+const badgeMap={};
+const $=id=>document.getElementById(id);
+
+function parseCsvLine(line){
+  const res=[];let cur='',inQ=false;
+  for(let i=0;i<line.length;i++){
+    const c=line[i];
+    if(c==='"'){if(inQ&&line[i+1]==='"'){cur+='"';i++;}else inQ=!inQ;}
+    else if(c===','&&!inQ){res.push(cur);cur='';}else cur+=c;
+  }
+  res.push(cur);return res.map(s=>s.trim());
+}
+function parseCsv(text){
+  text=text.replace(/^\uFEFF/,'');
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2)return{headers:[],rows:[]};
+  return{headers:parseCsvLine(lines[0]),rows:lines.slice(1).map(parseCsvLine)};
+}
+function parseNum(v){
+  if(typeof v!=='string')return NaN;
+  let s=v.trim().replace(/\s/g,'');if(!s)return NaN;
+  if(/^-?\d{1,3}(\.\d{3})*(,\d+)?$/.test(s))s=s.replace(/\./g,'').replace(',','.');
+  else if(/^-?\d{1,3}(,\d{3})*(\.\d+)?$/.test(s))s=s.replace(/,/g,'');
+  else s=s.replace(',','.');
+  return parseFloat(s);
+}
+function isDateVal(v){return/^\d{1,2}[.\/-]\d{1,2}[.\/-]\d{2,4}/.test(v)||/^\d{4}-\d{2}-\d{2}/.test(v);}
+function fmtNum(n){if(isNaN(n))return'';return n.toLocaleString('uk-UA',{minimumFractionDigits:0,maximumFractionDigits:2});}
+
+function detectType(ci,rows,header){
+  const h=header.toLowerCase();
+  const vals=rows.map(r=>(r[ci]||'').trim()).filter(v=>v!=='');
+  if(!vals.length)return'TEXT';
+  if(vals.filter(isDateVal).length/vals.length>0.7)return'DATE';
+  const nums=vals.map(parseNum),numRatio=nums.filter(n=>!isNaN(n)).length/vals.length;
+  if(numRatio>0.7){
+    const valid=nums.filter(n=>!isNaN(n));
+    if(valid.every(n=>n>=0&&n<=100)&&/%|відс|покрит|готовн|рейт|rate|percent|виконан/.test(h))return'PERCENT';
+    return'NUMERIC';
+  }
+  if(new Set(vals).size<=8)return'STATUS';
+  return'TEXT';
+}
+
+function buildKPIs(){
+  const kpis=[{emoji:'📋',label:'Всього записів',value:String(allRows.length),sub:'рядків у таблиці'}];
+  const hl=headers.map(h=>h.toLowerCase());
+  for(let i=0;i<headers.length&&kpis.length<6;i++){
+    const h=hl[i],t=colTypes[i];
+    const nums=allRows.map(r=>parseNum((r[i]||'').trim())).filter(n=>!isNaN(n));
+    if(t==='PERCENT'&&nums.length){
+      const avg=nums.reduce((a,b)=>a+b,0)/nums.length;
+      kpis.push({emoji:'📊',label:headers[i],value:fmtNum(avg)+'%',sub:'середнє значення'});
+    }else if(t==='NUMERIC'&&nums.length){
+      const isMoney=/сум|варт|бюдж|грн|тис|млн|ціна|кошт|revenue|budget|cost|price|amount/.test(h);
+      const isAvg=/%|відс|рейт|rate|avg|сер/.test(h);
+      if(isMoney)kpis.push({emoji:'💰',label:headers[i],value:fmtNum(nums.reduce((a,b)=>a+b,0)),sub:'загальна сума'});
+      else if(isAvg)kpis.push({emoji:'📈',label:headers[i],value:fmtNum(nums.reduce((a,b)=>a+b,0)/nums.length),sub:'середнє'});
+      else kpis.push({emoji:'🔢',label:headers[i],value:fmtNum(nums.reduce((a,b)=>a+b,0)),sub:'сума'});
+    }else if(t==='STATUS'){
+      const uniq=new Set(allRows.map(r=>(r[i]||'').trim()).filter(v=>v));
+      if(/статус|стан|тип|type|status|катег|stage/.test(h))
+        kpis.push({emoji:'🏷️',label:headers[i],value:String(uniq.size),sub:'унікальних значень'});
+    }
+  }
+  for(let i=0;i<headers.length&&kpis.length<4;i++){
+    if(colTypes[i]==='TEXT'&&/людин|особ|праці|worker|person|employee|виконав|відповідальн|підрозділ/.test(hl[i])){
+      const uniq=new Set(allRows.map(r=>(r[i]||'').trim()).filter(v=>v));
+      kpis.push({emoji:'👤',label:headers[i],value:String(uniq.size),sub:'унікальних'});
+    }
+  }
+  return kpis.slice(0,6);
+}
+
+function makeChartCard(title){
+  const d=document.createElement('div');d.className='chart-card';
+  d.innerHTML=`<div class="chart-card-title">${title}</div><div class="chart-wrap"><canvas></canvas></div>`;
+  return d;
+}
+function buildCharts(){
+  const grid=$('chartsGrid');grid.innerHTML='';
+  chartInst.forEach(c=>c.destroy());chartInst=[];
+  const firstText=colTypes.findIndex(t=>t==='TEXT'||t==='STATUS');
+  // Doughnut
+  for(let i=0;i<headers.length;i++){
+    if(colTypes[i]!=='STATUS'&&colTypes[i]!=='TEXT')continue;
+    const vals=allRows.map(r=>(r[i]||'').trim()).filter(v=>v);
+    const uniq=new Set(vals);if(uniq.size>8||uniq.size<2)continue;
+    const freq={};vals.forEach(v=>freq[v]=(freq[v]||0)+1);
+    const labels=Object.keys(freq),data=labels.map(l=>freq[l]);
+    const card=makeChartCard('Розподіл: '+headers[i]);grid.appendChild(card);
+    chartInst.push(new Chart(card.querySelector('canvas').getContext('2d'),{
+      type:'doughnut',
+      data:{labels,datasets:[{data,backgroundColor:CHART_COLORS,borderWidth:2,borderColor:'transparent',hoverOffset:10}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:11},padding:10,boxWidth:12}},
+          tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${ctx.parsed} (${Math.round(ctx.parsed/vals.length*100)}%)`}}}}
+    }));break;
+  }
+  // Bar
+  for(let i=0;i<headers.length;i++){
+    if(colTypes[i]!=='NUMERIC')continue;
+    const lc=firstText>=0&&firstText!==i?firstText:-1;
+    const data=allRows.map((r,ri)=>({
+      label:lc>=0?(r[lc]||`Р${ri+1}`).toString().slice(0,28):`Р${ri+1}`,
+      val:parseNum((r[i]||'').trim())
+    })).filter(d=>!isNaN(d.val)).sort((a,b)=>b.val-a.val).slice(0,10);
+    const card=makeChartCard('Топ-10: '+headers[i]);grid.appendChild(card);
+    chartInst.push(new Chart(card.querySelector('canvas').getContext('2d'),{
+      type:'bar',
+      data:{labels:data.map(d=>d.label),datasets:[{data:data.map(d=>d.val),backgroundColor:CHART_COLORS[0]+'cc',borderRadius:6,borderSkipped:false}]},
+      options:{responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmtNum(ctx.parsed.y)}}},
+        scales:{x:{ticks:{color:'#64748b',maxRotation:38,font:{size:10}},grid:{color:'rgba(148,163,184,0.06)'}},
+                y:{ticks:{color:'#64748b',font:{size:10},callback:v=>fmtNum(v)},grid:{color:'rgba(148,163,184,0.07)'}}}}
+    }));break;
+  }
+  // Horizontal bar (percent)
+  for(let i=0;i<headers.length;i++){
+    if(colTypes[i]!=='PERCENT')continue;
+    const lc=firstText>=0&&firstText!==i?firstText:-1;
+    const data=allRows.map((r,ri)=>({
+      label:lc>=0?(r[lc]||`Р${ri+1}`).toString().slice(0,28):`Р${ri+1}`,
+      val:parseNum((r[i]||'').trim())
+    })).filter(d=>!isNaN(d.val)).slice(0,12);
+    const card=makeChartCard('Відсоток: '+headers[i]);
+    card.querySelector('.chart-wrap').style.height=Math.max(220,data.length*30+60)+'px';
+    grid.appendChild(card);
+    chartInst.push(new Chart(card.querySelector('canvas').getContext('2d'),{
+      type:'bar',
+      data:{labels:data.map(d=>d.label),datasets:[{data:data.map(d=>d.val),backgroundColor:CHART_COLORS[1]+'cc',borderRadius:5,borderSkipped:false}]},
+      options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,
+        plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${fmtNum(ctx.parsed.x)}%`}}},
+        scales:{x:{min:0,max:100,ticks:{color:'#64748b',font:{size:10},callback:v=>v+'%'},grid:{color:'rgba(148,163,184,0.07)'}},
+                y:{ticks:{color:'#64748b',font:{size:10}},grid:{display:false}}}}
+    }));break;
+  }
+  if(!grid.children.length)grid.innerHTML='<div class="no-data">📭 Недостатньо даних для побудови графіків</div>';
+}
+
+function getBadge(ci,val){
+  if(!badgeMap[ci])badgeMap[ci]={};
+  if(!badgeMap[ci][val]){const n=Object.keys(badgeMap[ci]).length%BADGE_PALETTE.length;badgeMap[ci][val]=BADGE_PALETTE[n];}
+  return badgeMap[ci][val];
+}
+function renderTable(){
+  const head=$('tableHead'),body=$('tableBody'),pag=$('pagination');
+  head.innerHTML='<tr>'+headers.map((h,i)=>{
+    const s=sortCol===i;const arrow=s?(sortDir===1?'▲':'▼'):'⇅';
+    return`<th class="${s?'sorted':''}" data-col="${i}">${h}<span class="sort-arrow">${arrow}</span></th>`;
+  }).join('')+'</tr>';
+  head.querySelectorAll('th').forEach(th=>th.addEventListener('click',()=>{
+    const c=+th.dataset.col;if(sortCol===c)sortDir=-sortDir;else{sortCol=c;sortDir=1;}applyFilterSort();
+  }));
+  const start=(currentPage-1)*PAGE_SIZE,page=filteredRows.slice(start,start+PAGE_SIZE);
+  if(!page.length){
+    body.innerHTML=`<tr><td colspan="${headers.length}" class="no-data">🔍 Нічого не знайдено за вашим запитом</td></tr>`;
+    pag.innerHTML='';return;
+  }
+  body.innerHTML=page.map(row=>'<tr>'+headers.map((_,i)=>{
+    const v=(row[i]||'').trim(),t=colTypes[i];
+    if(t==='STATUS'){const s=getBadge(i,v);return`<td><span class="badge" style="background:${s.bg};color:${s.fg}">${v||'—'}</span></td>`;}
+    if(t==='NUMERIC'){const n=parseNum(v);return`<td class="num-cell">${isNaN(n)?v||'—':fmtNum(n)}</td>`;}
+    if(t==='PERCENT'){const n=parseNum(v),p=isNaN(n)?0:Math.min(100,Math.max(0,n));
+      return`<td><div class="progress-wrap"><div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${p}%"></div></div><span class="progress-val">${isNaN(n)?'—':fmtNum(n)+'%'}</span></div></td>`;}
+    return`<td>${v||'—'}</td>`;
+  }).join('')+'</tr>').join('');
+  const total=filteredRows.length,totPg=Math.ceil(total/PAGE_SIZE);
+  const from=start+1,to=Math.min(start+PAGE_SIZE,total);
+  const range=(()=>{if(totPg<=7)return Array.from({length:totPg},(_,i)=>i+1);
+    const p=[1];if(currentPage>3)p.push('…');
+    for(let i=Math.max(2,currentPage-1);i<=Math.min(totPg-1,currentPage+1);i++)p.push(i);
+    if(currentPage<totPg-2)p.push('…');p.push(totPg);return p;})();
+  let h=`<div class="pagination-info">Показано ${from}–${to} з ${total} записів</div><div class="pagination-btns">`;
+  h+=`<button class="page-btn" id="pgPrev" ${currentPage<=1?'disabled':''}>←</button>`;
+  range.forEach(p=>{
+    if(p==='…')h+=`<span class="page-btn" style="cursor:default;border:none;background:none">…</span>`;
+    else h+=`<button class="page-btn ${p===currentPage?'active':''}" data-pg="${p}">${p}</button>`;
+  });
+  h+=`<button class="page-btn" id="pgNext" ${currentPage>=totPg?'disabled':''}>→</button></div>`;
+  pag.innerHTML=h;
+  $('pgPrev')&&$('pgPrev').addEventListener('click',()=>{currentPage--;renderTable();});
+  $('pgNext')&&$('pgNext').addEventListener('click',()=>{currentPage++;renderTable();});
+  pag.querySelectorAll('[data-pg]').forEach(b=>b.addEventListener('click',()=>{currentPage=+b.dataset.pg;renderTable();}));
+}
+function applyFilterSort(){
+  const q=$('searchInput').value.toLowerCase();
+  filteredRows=allRows.filter(r=>r.some(c=>(c||'').toLowerCase().includes(q)));
+  if(sortCol>=0)filteredRows.sort((a,b)=>{
+    const av=(a[sortCol]||'').trim(),bv=(b[sortCol]||'').trim();
+    const an=parseNum(av),bn=parseNum(bv);
+    if(!isNaN(an)&&!isNaN(bn))return(an-bn)*sortDir;
+    return av.localeCompare(bv,'uk')*sortDir;
+  });
+  currentPage=1;renderTable();
+}
+function exportCSV(){
+  const csv=[headers,...filteredRows].map(r=>r.map(c=>`"${(c||'').replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='dashboard-export.csv';a.click();
+}
+async function init(){
+  try{
+    const resp=await fetch(CSV_URL,{cache:'no-store'});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const text=await resp.text();
+    if(text.trim().startsWith('<'))throw new Error('Not CSV');
+    const parsed=parseCsv(text);
+    if(!parsed.headers.length||!parsed.rows.length)throw new Error('Empty');
+    headers=parsed.headers;allRows=parsed.rows;
+    colTypes=headers.map((h,i)=>detectType(i,allRows,h));
+    filteredRows=[...allRows];
+    const now=new Date();
+    $('updateTime').textContent='🕐 Оновлено: '+now.toLocaleString('uk-UA',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+    const kpis=buildKPIs();
+    $('kpiGrid').innerHTML='';
+    kpis.forEach((k,idx)=>{
+      const el=document.createElement('div');el.className='kpi-card';el.style.animationDelay=(idx*0.07)+'s';
+      el.innerHTML=`<div class="kpi-emoji">${k.emoji}</div><div class="kpi-label">${k.label}</div><div class="kpi-value">${k.value}</div><div class="kpi-sub">${k.sub}</div>`;
+      $('kpiGrid').appendChild(el);
+    });
+    buildCharts();renderTable();
+    $('searchInput').addEventListener('input',applyFilterSort);
+    $('csvBtn').addEventListener('click',exportCSV);
+    $('loadingState').style.display='none';
+    $('dashContent').style.display='block';
+  }catch(e){
+    console.error(e);
+    $('loadingState').style.display='none';
+    $('errorState').style.display='flex';
+  }
+}
+init();
+</script>
+</body>
+</html>
